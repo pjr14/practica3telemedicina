@@ -1,6 +1,6 @@
 // public_rpc/app_rpc.js
 
-const app = rpc("https://practica3telemedicina-cz8e.onrender.com", "app_sanitario");
+const app = rpc("localhost", "app_sanitario");
 
 // Referencias a los procedimientos remotos
 const loginSanitarioRPC = app.procedure("loginSanitario");
@@ -438,7 +438,7 @@ function enviarResenya() {
 
 // --- WEBSOCKETS (SANITARIO) ---
 function conectarWebSocketsSanitario() {
-    conexionWS = new WebSocket("wss://practica3telemedicina-cz8e.onrender.com", "hospital");
+    conexionWS = new WebSocket("ws://localhost:4444", "hospital");
 
     conexionWS.addEventListener("open", function () {
         console.log("Sanitario conectado al servidor de WebSockets");
