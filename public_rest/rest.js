@@ -18,7 +18,7 @@
 		// --- PARA CORDOVA ---
         // Si la url empieza por "/", le pegamos la IP de tu ordenador por delante
         if (url.startsWith("/")) {
-            url = "http://localhost:3000" + url;
+            url = "https://practica3telemedicina-cz8e.onrender.com" + url;
         }
 		
 		method = method.toUpperCase(); // método en mayúsculas

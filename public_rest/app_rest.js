@@ -427,7 +427,7 @@ function generarEstrellas(valor) {
 // --- WEBSOCKETS (GESTOR) ---
 function conectarWebSocketsGestor() {
     // 1. Nos conectamos al puerto 4444 (¡Ojo! Protocolo 'hospital')
-    conexionWS = new WebSocket("ws://172.20.10.2:4444", "hospital");
+    conexionWS = new WebSocket("wss://practica3telemedicina-cz8e.onrender.com", "hospital");
 
     conexionWS.addEventListener("open", function () {
         console.log("Gestor conectado al servidor de WebSockets");

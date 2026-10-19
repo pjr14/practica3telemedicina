@@ -17,7 +17,7 @@ app.use(express.json()); // Para poder leer el body en formato JSON
 
 
 function verificarToken(req, res, next) {
-    if (req.path === '/api/gestores/login' || (req.path === '/api/gestores' && req.method === 'POST')) {
+    if (req.path === '/gestores/login' || (req.path === '/api/gestores' && req.method === 'POST')) {
         return next();
     }
     const cabeceraAuth = req.headers['authorization'];
@@ -118,7 +118,9 @@ app.post("/api/gestores/login", async (req, res) => {
         .eq('usuario', req.body.login)
         .eq('password', req.body.password);
     
-    if (error) return res.status(500).json("Error BD");
+    if (error){
+        return res.status(500).json("Error BD");
+    } 
     if (data.length > 0) {
         let idGestor = data[0].id;
         // Creamos el Token JWT aquí
