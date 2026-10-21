@@ -17,7 +17,7 @@ app.use(express.json()); // Para poder leer el body en formato JSON
 
 
 function verificarToken(req, res, next) {
-    if (req.path === '/gestores/login' || (req.path === '/api/gestores' && req.method === 'POST')) {
+    if (req.path === '/gestores/login' || (req.path === '/gestores' && req.method === 'POST')) {
         return next();
     }
     const cabeceraAuth = req.headers['authorization'];
@@ -221,28 +221,6 @@ app.get("/api/sanitarios/:id", async (req, res) => {
     if (error) return res.status(500).json("Error BD");
     if (data.length > 0) res.status(200).json(data[0]);
     else res.status(404).json("Sanitario no encontrado");
-});
-
-
-// practica 3. Ranking Ministerio de Sanidad
-app.get("/api/reservas_ministerio", async (req, res) => {
-    let { data, error } = await supabase.from('reservas').select(`
-        horas_estimadas, fecha_peticion, fecha_inicio, fecha_fin,
-        sanitarios(nombre, apellidos),
-        recursos(modelos(categorias(nombre)))
-    `);
-    if (error) return res.status(500).json("Error BD");
-
-    let filas = data.map(r => ({
-        nombre: r.sanitarios.nombre,
-        apellidos: r.sanitarios.apellidos,
-        categoría: r.recursos.modelos.categorias.nombre,
-        horas_estimadas: r.horas_estimadas,
-        fec_pet: r.fecha_peticion,
-        fec_ini: r.fecha_inicio,
-        fecha_fin: r.fecha_fin
-    }));
-    res.status(200).json(filas);
 });
 
 
