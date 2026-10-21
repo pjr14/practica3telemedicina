@@ -535,32 +535,110 @@ function obtenerRankingMinisterio() {
 }
 
 function enviarDatosMinisterio() {
-    // 1. Pedimos a nuestro propio servidor todas las reservas formateadas
-    rest.get("/api/reservas_ministerio", function(estado, reservas) {
-        if (estado !== 200) return alert("Error al obtener datos locales");
-        
-        if (reservas.length === 0) {
-            return alert("No hay reservas en tu base de datos para enviar. ¡Crea una primero!");
-        }
+    // 1. Usamos el GET que ya tenemos para sacar todos los recursos
+    rest.get("/api/recursos", function(estado, recursos) {
+        if (estado !== 200) return alert("Error al obtener recursos");
+        if (recursos.length === 0) return alert("No hay recursos en la base de datos.");
 
-        // 2. Preparamos el JSON exacto que exige el Ministerio
-        // (Asignamos el id_area 17, Traumatología, como ejemplo para tu hospital)
-        let paquete = {
-            id_area: 15, 
-            fecha: new Date().toISOString().split('T')[0], // Formato YYYY-MM-DD
-            datos: reservas
-        };
+        let todasLasReservas = [];
+        let peticionesCompletadas = 0;
 
-        // 3. Enviamos el paquete al servidor externo mediante POST
-        let urlMinisterio = "https://undefined.ua.es/telemedicina/api/datos";
-        
-        rest.post(urlMinisterio, paquete, function(estadoMin, respuesta) {
-            if (estadoMin === 200 || estadoMin === 201) {
-                alert("¡Datos enviados al Ministerio con éxito!");
-                obtenerRankingMinisterio(); // Refrescamos el ranking visualmente
-            } else {
-                alert("Error del servidor del Ministerio (Código " + estadoMin + ")");
-            }
+        // 2. Por cada recurso, usamos el GET que ya tenemos para sacar sus reservas
+        recursos.forEach(recurso => {
+            rest.get("/api/recursos/" + recurso.id + "/reservas", function(est, reservasRecurso) {
+                if (est === 200) {
+                    reservasRecurso.forEach(r => {
+                        // Separamos el nombre del sanitario (que nos llega como "Nombre Apellido")
+                        let partesNombre = r.sanitario_nombre ? r.sanitario_nombre.split(' ') : ["Desconocido", ""];
+                        let nombre = partesNombre[0];
+                        let apellidos = partesNombre.slice(1).join(' ');
+
+                        // Juntamos los datos de ambas peticiones (del recurso y de la reserva)
+                        todasLasReservas.push({
+                            nombre: nombre,
+                            apellidos: apellidos,
+                            categoría: recurso.categoria_nombre, // Lo sacamos del primer GET
+                            horas_estimadas: r.horas_estimadas,
+                            fec_pet: r.fecha_peticion,
+                            fec_ini: r.fecha_inicio,
+                            fecha_fin: r.fecha_fin
+                        });
+                    });
+                }
+
+                peticionesCompletadas++;
+
+                // 3. Cuando hayamos terminado de revisar TODOS los recursos, enviamos el POST
+                if (peticionesCompletadas === recursos.length) {
+                    if (todasLasReservas.length === 0) {
+                        return alert("No hay reservas en tu base de datos para enviar. ¡Crea una primero!");
+                    }
+
+                    // Preparamos el paquete con el código 15 (Pediatría)
+                    let paquete = {
+                        id_area: 15, 
+                        fecha: new Date().toISOString().split('T')[0], // Formato YYYY-MM-DD
+                        datos: todasLasReservas
+                    };
+
+                    let urlMinisterio = "https://undefined.ua.es/telemedicina/api/datos";
+                    
+                    rest.post(urlMinisterio, paquete, function(estadoMin, respuesta) {
+                        if (estadoMin === 200 || estadoMin === 201) {
+                            alert("¡Datos enviados al Ministerio con éxito usando múltiples GETs!");
+                            obtenerRankingMinisterio();
+                        } else {
+                            alert("Error del servidor del Ministerio (Código " + estadoMin + ")");
+                        }
+                    });
+                }
+            });
         });
+    });
+}
+
+function contarRegistrosArea() {
+    let idArea = parseInt(document.getElementById("input-area-examen").value);
+    
+    if (isNaN(idArea)) {
+        alert("Introduce un ID válido.");
+        return;
+    }
+
+    rest.get("https://undefined.ua.es/telemedicina/api/datos", function(estado, respuesta) {
+        if (estado === 200) {
+            let totalRegistros = 0;
+            
+            respuesta.forEach(envio => {
+                if (envio.id_area === idArea && envio.datos) {
+                    totalRegistros += envio.datos.length;
+                }
+            });
+
+            let nombreArea = AREAS_MEDICAS[idArea] || "Desconocida";
+            alert("El área de " + nombreArea + " tiene " + totalRegistros + " registros.");
+        }
+    });
+}
+
+function contarReservasFinalizadas() {
+    let miAreaId = 15;
+
+    rest.get("https://undefined.ua.es/telemedicina/api/datos", function(estado, respuesta) {
+        if (estado === 200) {
+            let totalFinalizadas = 0;
+
+            respuesta.forEach(envio => {
+                if (envio.id_area === miAreaId && envio.datos) {
+                    envio.datos.forEach(reserva => {
+                        if (reserva.fecha_fin !== null && reserva.fecha_fin !== undefined && reserva.fecha_fin !== "") {
+                            totalFinalizadas++;
+                        }
+                    });
+                }
+            });
+
+            alert("Tu área (Pediatría) tiene " + totalFinalizadas + " reservas finalizadas.");
+        }
     });
 }
