@@ -20,13 +20,13 @@ function hacerLogin() {
             gestorActualId = respuesta.id; // sacamos el ID del gestor logueado
             window.miToken = respuesta.token; // guardamos el token en una variable global para usarlo en futuras peticiones
             
-            rest.get("/api/gestores/" + gestorActualId, function(est, gestor) {
+            rest.get("/api/gestores/" + gestorActualId, function(est, gestor) { // Obtenemos los datos del gestor para mostrar su nombre en la pantalla de inicio
                 if (est === 200) {
                     document.getElementById("bienvenida-nombre").innerText = gestor.nombre + " " + gestor.apellidos;
                     mostrarPantalla('pantalla-inicio');
                     cargarFiltrosBuscador(); 
 
-                    conectarWebSocketsGestor(); // ¡Conectamos a WebSockets al hacer login exitoso!
+                    conectarWebSocketsGestor(); // Conectamos a WebSockets al hacer login exitoso
                 }
             });
         } else {
@@ -543,7 +543,7 @@ function enviarDatosMinisterio() {
         let todasLasReservas = [];
         let peticionesCompletadas = 0;
 
-        // 2. Por cada recurso, usamos el GET que ya tenemos para sacar sus reservas
+        // Por cada recurso, GET que ya tenemos para sacar sus reservas
         recursos.forEach(recurso => {
             rest.get("/api/recursos/" + recurso.id + "/reservas", function(est, reservasRecurso) {
                 if (est === 200) {
@@ -568,13 +568,13 @@ function enviarDatosMinisterio() {
 
                 peticionesCompletadas++;
 
-                // 3. Cuando hayamos terminado de revisar TODOS los recursos, enviamos el POST
+                // terminamos de revisar TODOS los recursos, enviamos el POST
                 if (peticionesCompletadas === recursos.length) {
                     if (todasLasReservas.length === 0) {
                         return alert("No hay reservas en tu base de datos para enviar. ¡Crea una primero!");
                     }
 
-                    // Preparamos el paquete con el código 15 (Pediatría)
+                    // Preparamos el paquete con el id 15 (Pediatría)
                     let paquete = {
                         id_area: 15, 
                         fecha: new Date().toISOString().split('T')[0], // Formato YYYY-MM-DD
@@ -595,5 +595,33 @@ function enviarDatosMinisterio() {
             });
         });
     });
+}
+
+function contarReservas() {
+    let idArea = parseInt(document.getElementById("input-area-examen").value);
+    
+    if (isNaN(idArea)) {
+        alert("Introduce un ID de área válido.");
+        return;
+    }
+
+    rest.get("https://undefined.ua.es/telemedicina/api/datos", function(estado, respuesta) {
+        if (estado === 200) {
+            let totalReservas = 0;
+            
+            respuesta.forEach(envio => {
+                if (envio.id_area === idArea && envio.datos) {
+                    totalReservas += envio.datos.length;
+                }
+            });
+
+            let nombreArea = AREAS_MEDICAS[idArea] || "Desconocida";
+            alert("Existen " + totalReservas + " reservas del área de " + nombreArea);
+        }
+    });
+}
+
+function calcularPorcentajeFinalizadas() {
+    
 }
 
